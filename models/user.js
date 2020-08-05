@@ -30,6 +30,10 @@ const UserSchema = new mongoose.Schema(
         },
         etat: {
             type: Boolean
+        },
+        image: {
+            type: String,
+            default: ""
         }
     }
 );

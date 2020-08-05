@@ -8,7 +8,9 @@ const User = require('./../models/user');
 const isAdmin = require('../middlewares/middleware');
 
 
+
 const app = express();
+
 
 //POST
 app.post('/register', (req, res) => {
@@ -48,16 +50,24 @@ app.post('/login', (req, res) => {
             if (!compare) {
                 res.status(404).send({ message: "password incorrect" });
             } else {
-                //JSON WEB TOKEN - jsonwebtoken 
-                let obj = {
-                    id: admin._id,
-                    role: admin.role,
-                    etat: admin.etat,
-                }
-                let myToken = jwk.sign(obj, "MyPrivateKey");
+                if (!admin.etat) {
+                    res.status(400).send({ message: "compte desactiver" })
+                } else {
+                    //JSON WEB TOKEN - jsonwebtoken 
+                    let obj = {
+                        id: admin._id,
+                        role: admin.role,
+                        etat: admin.etat,
+                        firstname: admin.firstname + " " + admin.lastname,
+                    }
 
-                res.status(200).send({ token: myToken });
+                    let myToken = jwk.sign(obj, "MyPrivateKey");
+
+                    res.status(200).send({ token: myToken });
+                }
+
             }
+
         }
     }).catch(() => {
         res.status(400).send({ message: "ERROR admin login !" });
@@ -67,7 +77,7 @@ app.post('/login', (req, res) => {
 
 
 
-app.get('/all', isAdmin, async (req, res) => {
+app.get('/all', async (req, res) => {
 
     try {
         let users = await User.find({ role: "user" });
@@ -96,6 +106,25 @@ app.get('/one/:idUser', isAdmin, async (req, res) => {
     }
 
 })
+
+
+app.get('/profile/:idUser', async (req, res) => {
+    // params w idUser ???????
+
+    try {
+        let id = req.params.idUser;
+        let user = await User.findOne({ _id: id })
+        if (!user) {
+            res.status(404).send({ message: "User not found" });
+        } else {
+            res.status(200).send(user);
+        }
+    } catch (e) {
+        res.status(400).send(e);
+    }
+
+})
+
 
 //DELETE
 app.delete('/delete/:idUser', isAdmin, (req, res) => {
@@ -146,7 +175,7 @@ app.patch('/update-form/:idUser', isAdmin, (req, res) => {
     User.findOne({ _id: id })
         .then((user) => {
             if (!user) {
-                res.status(400).send({ message: "car not found" })
+                res.status(400).send({ message: "user not found" })
             } else {
                 user.firstname = userUpdate.firstname;
                 user.lastname = userUpdate.lastname;
@@ -161,4 +190,9 @@ app.patch('/update-form/:idUser', isAdmin, (req, res) => {
         })
 
 })
+
+
+
+
+
 module.exports = app;
